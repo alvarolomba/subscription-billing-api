@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: subscription-billing-api
+  labels:
+    app: subscription-billing-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: subscription-billing-api
+  template:
+    metadata:
+      labels:
+        app: subscription-billing-api
+    spec:
+      containers:
+        - name: api
+          image: alvarolomba/subscription-billing-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: subscription-billing-secrets
+                  key: database-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: subscription-billing-secrets
+                  key: jwt-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 20
